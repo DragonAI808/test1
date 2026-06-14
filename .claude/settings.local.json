@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Process \"C:\\\\ai-projects\\\\test1\\\\tictactoe.html\")",
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\.local\\\\bin\" | Format-Table -AutoSize; Get-ChildItem \\(Split-Path \\(Get-Command claude\\).Source\\) | Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\.claude\\\\backups\" | Sort-Object LastWriteTime -Descending | Select-Object -First 5 | Format-Table -AutoSize)"
+    ]
+  }
+}
