@@ -60,10 +60,10 @@
     .nav-links { display: flex; gap: 2.5rem; list-style: none; }
     .nav-links a {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
+      font-size: 0.85rem;
       letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: var(--fog);
+      color: var(--white);
       text-decoration: none;
       transition: color 0.2s;
     }
@@ -83,6 +83,7 @@
       position: absolute;
       top: 50%;
       left: 50%;
+      z-index: 1; /* sits above .hero-bg (z-index: 0) */
       transform: translate(-50%, -50%);
       font-family: 'Cormorant Garamond', serif;
       font-size: clamp(7rem, 22vw, 21rem);
@@ -98,6 +99,74 @@
     @keyframes drift {
       0%,100% { transform: translate(-50%, -50%) rotate(-1.2deg); }
       50%      { transform: translate(-50%, -53%) rotate(1.2deg); }
+    }
+
+    /* ── HERO BG IMAGE ── */
+
+    /* Wrapper fills the hero exactly; hero's overflow:hidden clips any scaled overflow */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    /* Dark gradient overlay sits on top of the photo so text stays readable.
+       Heavier at top (nav) and bottom (scroll cue), lighter in the middle. */
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(13, 27, 42, 0.75) 0%,
+        rgba(13, 27, 42, 0.5) 50%,
+        rgba(13, 27, 42, 0.8) 100%
+      );
+    }
+
+    /* The image fills its wrapper with a centered crop */
+    .hero-bg-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transform: scale(1);
+      transform-origin: center center;
+      /* Promotes the image to its own GPU compositing layer so scale transforms
+         never trigger a repaint — they're handled entirely by the compositor */
+      will-change: transform;
+    }
+
+    /* CSS Scroll-Driven Animation — Chrome / Edge 115+
+       @supports gates it so older browsers silently skip the whole block.
+
+       animation-timeline: scroll(root block)
+         → the animation's progress is driven by how far the ROOT element (the page)
+           has been scrolled along the BLOCK axis (vertically).
+
+       animation-range: 0px 100vh
+         → the keyframe runs from scroll-position 0 (page top) to 100vh (one screen
+           height scrolled). Past that point the image stays at scale(1.1).
+
+       linear + both
+         → no easing (scroll position maps 1:1 to scale), and both fill modes keep
+           the start/end states applied before and after the range. */
+    @supports (animation-timeline: scroll()) {
+      .hero-bg-img {
+        animation: hero-zoom linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0px 60vh;
+      }
+    }
+
+    @keyframes hero-zoom {
+      from { transform: scale(1);    } /* image at rest when page is at top   */
+      to   { transform: scale(1.25); } /* 25% zoom after scrolling half screen */
+    }
+
+    /* Honor the user's OS "reduce motion" preference — keep image static */
+    @media (prefers-reduced-motion: reduce) {
+      .hero-bg-img { animation: none !important; }
     }
 
     /* Compass rose */
@@ -118,34 +187,39 @@
     }
     .hero-eyebrow {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.63rem;
-      letter-spacing: 0.32em;
+      font-size: 0.95rem;
+      letter-spacing: 0.28em;
       text-transform: uppercase;
-      color: var(--amber);
-      margin-bottom: 1.6rem;
+      color: var(--white);
+      margin-top: 1.8rem;
+      margin-bottom: 0;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.6);
     }
     .hero-title {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(3.2rem, 8.5vw, 7.5rem);
-      font-weight: 400;
+      font-size: clamp(4rem, 10vw, 9rem);
+      font-weight: 700;
       line-height: 0.9;
       letter-spacing: 0.01em;
       color: var(--white);
+      text-shadow: 0 2px 20px rgba(0,0,0,0.65);
     }
     .hero-title em {
       display: block;
       font-style: italic;
       font-weight: 700;
       color: var(--amber);
+      text-shadow: 0 2px 20px rgba(0,0,0,0.65);
     }
     .hero-sub {
       font-family: 'Cormorant Garamond', serif;
-      font-size: clamp(1rem, 2vw, 1.4rem);
+      font-size: clamp(1.2rem, 2.4vw, 1.8rem);
       font-style: italic;
-      font-weight: 300;
-      color: var(--fog);
+      font-weight: 600;
+      color: var(--white);
       margin: 1.2rem 0 2rem;
       letter-spacing: 0.04em;
+      text-shadow: 0 1px 12px rgba(0,0,0,0.7);
     }
     .hero-cta {
       display: inline-block;
@@ -432,6 +506,11 @@
 
 <!-- HERO -->
 <div class="hero">
+  <!-- Background image layer — zooms on scroll, sits behind all other hero content -->
+  <div class="hero-bg" aria-hidden="true">
+    <img src="GeminiHero1.png" alt="" class="hero-bg-img">
+  </div>
+
   <div class="hero-ghost" aria-hidden="true">HARBOR</div>
 
   <svg class="compass" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -452,12 +531,12 @@
   </svg>
 
   <div class="hero-content">
-    <p class="hero-eyebrow">Est. 2018 &nbsp;·&nbsp; Specialty Coffee &nbsp;·&nbsp; Single Origin</p>
     <h1 class="hero-title">
       Harbor<em>Roasters</em>
     </h1>
     <p class="hero-sub">Where the tide meets the pour.</p>
     <a href="#menu" class="hero-cta">Explore the Menu</a>
+    <p class="hero-eyebrow">Est. 2018 &nbsp;·&nbsp; Specialty Coffee &nbsp;·&nbsp; Single Origin</p>
   </div>
 
   <div class="hero-scroll" aria-hidden="true">Scroll</div>
@@ -674,10 +753,39 @@
 </footer>
 
 <script>
+  // Nav backdrop on scroll
   const nav = document.getElementById('nav');
   window.addEventListener('scroll', () => {
     nav.classList.toggle('scrolled', window.scrollY > 60);
   }, { passive: true });
+
+  // Hero zoom — JS fallback for browsers without CSS scroll-driven animations (Safari, Firefox).
+  // The CSS @supports block handles this natively in Chrome/Edge 115+; this check skips it there.
+  if (!CSS.supports('animation-timeline', 'scroll()')) {
+    const heroBgImg = document.querySelector('.hero-bg-img');
+    let ticking = false;
+
+    function applyHeroZoom() {
+      // progress: 0 when page is at top, 1 after scrolling one full viewport height —
+      // mirrors the CSS animation-range of 0px → 100vh
+      const progress = Math.min(window.scrollY / (window.innerHeight * 0.6), 1);
+      // Scale range 1.0 → 1.25 matches the @keyframes values
+      heroBgImg.style.transform = `scale(${1 + progress * 0.25})`;
+      ticking = false;
+    }
+
+    // requestAnimationFrame throttle: browsers can fire dozens of scroll events per frame.
+    // The ticking flag ensures we queue at most one rAF callback per frame, preventing
+    // redundant style writes and keeping the update in sync with the display refresh rate.
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(applyHeroZoom);
+        ticking = true;
+      }
+    }, { passive: true }); // passive: true lets the browser scroll immediately without waiting for this handler
+
+    applyHeroZoom(); // set correct scale on load (handles mid-page refreshes)
+  }
 </script>
 
 </body>
